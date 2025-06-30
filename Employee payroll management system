@@ -1,0 +1,165 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_EMPLOYEES 100
+
+// Structure to store employee details
+struct Employee {
+    int id;
+    char name[50];
+    float basicSalary;
+    float hra, da, grossSalary;
+};
+
+// Function declarations
+void addEmployee(struct Employee employees[], int *count);
+void displayAllEmployees(struct Employee employees[], int count);
+void searchByID(struct Employee employees[], int count, int id);
+void saveToFile(struct Employee employees[], int count);
+void loadFromFile(struct Employee employees[], int *count);
+
+int main() {
+    struct Employee employees[MAX_EMPLOYEES];
+    int employeeCount = 0;
+    int choice, id;
+
+    // Load existing data from file at the beginning
+    loadFromFile(employees, &employeeCount);
+
+    // Simple menu-driven interface
+    do {
+        printf("\n=== Employee Payroll Management System ===\n");
+        printf("1. Add Employee\n");
+        printf("2. View All Employees\n");
+        printf("3. Search Employee by ID\n");
+        printf("4. Save & Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch(choice) {
+            case 1:
+                addEmployee(employees, &employeeCount);
+                break;
+            case 2:
+                displayAllEmployees(employees, employeeCount);
+                break;
+            case 3:
+                printf("Enter Employee ID to search: ");
+                scanf("%d", &id);
+                searchByID(employees, employeeCount, id);
+                break;
+            case 4:
+                saveToFile(employees, employeeCount);
+                printf("Data saved successfully. Exiting...\n");
+                break;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+
+    } while(choice != 4);
+
+    return 0;
+}
+
+// Adds a new employee and calculates salary details
+void addEmployee(struct Employee employees[], int *count) {
+    struct Employee newEmp;
+
+    printf("\n--- Add New Employee ---\n");
+    printf("Enter Employee ID: ");
+    scanf("%d", &newEmp.id);
+    printf("Enter Name: ");
+    scanf(" %[^\n]", newEmp.name);
+    printf("Enter Basic Salary: ");
+    scanf("%f", &newEmp.basicSalary);
+
+    // Simple HRA and DA calculation
+    newEmp.hra = newEmp.basicSalary * 0.20;
+    newEmp.da = newEmp.basicSalary * 0.10;
+    newEmp.grossSalary = newEmp.basicSalary + newEmp.hra + newEmp.da;
+
+    employees[*count] = newEmp;
+    (*count)++;
+
+    printf("Employee added successfully!\n");
+}
+
+// Displays all employee records
+void displayAllEmployees(struct Employee employees[], int count) {
+    if(count == 0) {
+        printf("\nNo employee records to display.\n");
+        return;
+    }
+
+    printf("\n%-5s %-20s %-10s %-10s %-10s %-10s\n", 
+           "ID", "Name", "Basic", "HRA", "DA", "Gross");
+
+    for(int i = 0; i < count; i++) {
+        printf("%-5d %-20s %-10.2f %-10.2f %-10.2f %-10.2f\n",
+               employees[i].id,
+               employees[i].name,
+               employees[i].basicSalary,
+               employees[i].hra,
+               employees[i].da,
+               employees[i].grossSalary);
+    }
+}
+
+// Searches for an employee by ID
+void searchByID(struct Employee employees[], int count, int id) {
+    for(int i = 0; i < count; i++) {
+        if(employees[i].id == id) {
+            printf("\nEmployee Found:\n");
+            printf("ID: %d\n", employees[i].id);
+            printf("Name: %s\n", employees[i].name);
+            printf("Basic Salary: %.2f\n", employees[i].basicSalary);
+            printf("Gross Salary: %.2f\n", employees[i].grossSalary);
+            return;
+        }
+    }
+
+    printf("No employee found with ID %d.\n", id);
+}
+
+// Saves data to a file
+void saveToFile(struct Employee employees[], int count) {
+    FILE *fp = fopen("employees.txt", "w");
+    if(fp == NULL) {
+        printf("Error opening file for saving.\n");
+        return;
+    }
+
+    for(int i = 0; i < count; i++) {
+        fprintf(fp, "%d,%s,%.2f,%.2f,%.2f,%.2f\n",
+                employees[i].id,
+                employees[i].name,
+                employees[i].basicSalary,
+                employees[i].hra,
+                employees[i].da,
+                employees[i].grossSalary);
+    }
+
+    fclose(fp);
+}
+
+// Loads data from a file at startup
+void loadFromFile(struct Employee employees[], int *count) {
+    FILE *fp = fopen("employees.txt", "r");
+    if(fp == NULL) {
+        // No file yet — probably first run
+        return;
+    }
+
+    while(fscanf(fp, "%d,%[^,],%f,%f,%f,%f\n",
+                 &employees[*count].id,
+                 employees[*count].name,
+                 &employees[*count].basicSalary,
+                 &employees[*count].hra,
+                 &employees[*count].da,
+                 &employees[*count].grossSalary) != EOF) {
+        (*count)++;
+    }
+
+    fclose(fp);
+}
